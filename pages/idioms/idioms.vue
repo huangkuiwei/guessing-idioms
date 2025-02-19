@@ -28,7 +28,8 @@
       </view>
 
       <view class="submit">
-        <button @click="submit">确认</button>
+        <button @click="submit" style="margin-right: 20rpx">确认</button>
+        <button @click="idioms = ''; generateNextLevel()">下一关</button>
       </view>
     </view>
 
@@ -963,6 +964,7 @@ export default {
   .title {
     flex-shrink: 0;
     align-self: stretch;
+    margin-bottom: 30rpx;
 
     .options {
       padding: 0 40rpx;
@@ -1007,7 +1009,7 @@ export default {
   }
 
   .sudoku-board {
-    flex-grow: 1;
+    // flex-grow: 1;
     overflow: auto;
     display: flex;
     flex-direction: column;
