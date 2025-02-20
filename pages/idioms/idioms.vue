@@ -33,6 +33,23 @@
       </view>
     </view>
 
+    <div class="packet-container" v-if="isRaining">
+      <!-- 红包容器 -->
+      <div class="rain-container" @click="toggleRain">
+        <div
+            v-for="(redpacket, index) in redpackets"
+            :key="index"
+            class="redpacket"
+            :style="{
+          left: redpacket.left + 'px',
+          animationDuration: redpacket.duration + 's'
+        }"
+            @click="openRedpacket(index)">
+          🧧
+        </div>
+      </div>
+    </div>
+
     <uni-popup ref="hongbaoRef" :mask-click="false" background-color="#ffffff" border-radius="5px 5px 5px 5px">
       <view class="hongbao-dialog">
         <view class="title">恭喜获得红包</view>
@@ -842,7 +859,11 @@ export default {
       money: 0,
       totalMoney: Number(uni.getStorageSync('totalMoney')) || 0,
       withdrawalMoney: '',
-      showNoticeDialog: false
+      showNoticeDialog: false,
+      isRaining: false,
+      redpackets: [],
+      timer: null,
+      maxCount: 20 // 同时存在的最大红包数
     }
   },
 
@@ -852,6 +873,10 @@ export default {
 
   computed: {
     ...mapState('app', ['noticeList'])
+  },
+
+  beforeDestroy() {
+    clearInterval(this.timer)
   },
 
   methods: {
@@ -891,6 +916,8 @@ export default {
         this.money = Number(money.toFixed(2))
         this.totalMoney = Number((this.totalMoney + this.money).toFixed(2))
         this.$refs.hongbaoRef.open()
+
+        this.toggleRain()
       }
     },
 
@@ -947,6 +974,42 @@ export default {
       uni.navigateTo({
         url: url
       })
+    },
+
+    toggleRain() {
+      this.isRaining = !this.isRaining
+      if (this.isRaining) {
+        this.startRain()
+      } else {
+        this.stopRain()
+      }
+    },
+
+    startRain() {
+      this.timer = setInterval(() => {
+        if (this.redpackets.length >= this.maxCount) return
+        this.createRedpacket()
+      }, 300)
+    },
+
+    stopRain() {
+      clearInterval(this.timer)
+      this.redpackets = []
+    },
+
+    createRedpacket() {
+      const newPacket = {
+        left: Math.random() * (window.innerWidth - 50),
+        duration: Math.random() * 3 + 2, // 下落时间2-5秒
+        id: Date.now()
+      }
+      this.redpackets.push(newPacket)
+    },
+
+    openRedpacket(index) {
+      console.log('红包被点击', this.redpackets[index].id)
+      // this.redpackets.splice(index, 1)
+      // 这里可以添加打开红包的逻辑
     }
   }
 }
@@ -1218,6 +1281,53 @@ export default {
       &:nth-child(2) {
         font-size: 28rpx;
       }
+    }
+  }
+}
+
+.packet-container {
+  background: #00000030;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
+  overflow: hidden;
+
+  .switch-btn {
+    position: fixed;
+    z-index: 100;
+    padding: 10px 20px;
+    background: #c00;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .rain-container {
+    position: relative;
+    height: 100%;
+  }
+
+  .redpacket {
+    position: absolute;
+    top: -50px;
+    font-size: 50px;
+    cursor: pointer;
+    animation: drop linear infinite;
+    user-select: none;
+  }
+
+  @keyframes drop {
+    from {
+      transform: translateY(-50px);
+    }
+    to {
+      transform: translateY(100vh);
     }
   }
 }
