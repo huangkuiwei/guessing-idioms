@@ -1,21 +1,23 @@
 <template>
   <view class="container">
     <view class="title">
+      <view class="grade">
+        第{{ grade }}关
+      </view>
+
       <view class="options">
         <view class="left" @click="$refs.withdrawalDialogRef.open()">
           <image mode="widthFix" src="/static/images/weixin_pay_icon.png"/>
           <text>提现</text>
         </view>
 
-        <view class="grade">第{{ currentIdiomsIndex + 1 }}关</view>
-
-        <view class="right">
+        <view class="right" @click="toggleRain">
           <image mode="widthFix" src="/static/images/hongbao.png"/>
           <text>{{ totalMoney }}</text>
         </view>
       </view>
 
-      <view class="sub-title">看图猜成语</view>
+      <view class="sub-title">看图猜成语拿红包</view>
     </view>
 
     <view class="sudoku-board">
@@ -38,14 +40,15 @@
       <div class="rain-container" @click="toggleRain">
         <div
             v-for="(redpacket, index) in redpackets"
-            :key="index"
+            :key="redpacket.id"
             class="redpacket"
+            @animationend="animationend(index)"
             :style="{
-          left: redpacket.left + 'px',
+          left: redpacket.left + 'rpx',
           animationDuration: redpacket.duration + 's'
         }"
             @click="openRedpacket(index)">
-          🧧
+          <image style="width: 80rpx" mode="widthFix" src="/static/images/hongbao.png"/>
         </div>
       </div>
     </div>
@@ -853,6 +856,7 @@ export default {
         }
       ]),
       currentIdiomsIndex: 0,
+      grade: 1,
       idioms: '',
       showError: false,
       focus: false,
@@ -863,12 +867,14 @@ export default {
       isRaining: false,
       redpackets: [],
       timer: null,
-      maxCount: 20 // 同时存在的最大红包数
+      maxCount: 3 // 同时存在的最大红包数
     }
   },
 
   onLoad() {
-    this.generatePuzzle()
+    setTimeout(() => {
+      this.toggleRain()
+    }, 100)
   },
 
   computed: {
@@ -880,18 +886,13 @@ export default {
   },
 
   methods: {
-    generatePuzzle() {
-      if (this.currentIdiomsIndex >= this.idiomsList.length) {
-        uni.showToast({
-          title: '通关完成',
-          icon: 'success'
-        })
-      }
-    },
-
     generateNextLevel() {
-      this.currentIdiomsIndex++
-      this.generatePuzzle()
+      this.grade++
+      if (this.currentIdiomsIndex >= (this.idiomsList.length - 1)) {
+        this.currentIdiomsIndex = 0
+      } else {
+        this.currentIdiomsIndex++
+      }
     },
 
     submit() {
@@ -916,8 +917,6 @@ export default {
         this.money = Number(money.toFixed(2))
         this.totalMoney = Number((this.totalMoney + this.money).toFixed(2))
         this.$refs.hongbaoRef.open()
-
-        this.toggleRain()
       }
     },
 
@@ -986,10 +985,12 @@ export default {
     },
 
     startRain() {
+      this.createRedpacket()
+
       this.timer = setInterval(() => {
         if (this.redpackets.length >= this.maxCount) return
         this.createRedpacket()
-      }, 300)
+      }, 2100)
     },
 
     stopRain() {
@@ -998,10 +999,13 @@ export default {
     },
 
     createRedpacket() {
+      let duration = Math.random() * 2 + 6 // 下落时间6-8秒
+      let id = Date.now()
+
       const newPacket = {
-        left: Math.random() * (window.innerWidth - 50),
-        duration: Math.random() * 3 + 2, // 下落时间2-5秒
-        id: Date.now()
+        left: (750 - (this.redpackets.length + 1) * 150),
+        duration: duration,
+        id: id
       }
       this.redpackets.push(newPacket)
     },
@@ -1010,6 +1014,11 @@ export default {
       console.log('红包被点击', this.redpackets[index].id)
       // this.redpackets.splice(index, 1)
       // 这里可以添加打开红包的逻辑
+    },
+
+    animationend(index) {
+      // console.log('index', index)
+      // this.redpackets.splice(index, 1)
     }
   }
 }
@@ -1028,6 +1037,11 @@ export default {
     flex-shrink: 0;
     align-self: stretch;
     margin-bottom: 30rpx;
+
+    .grade {
+      text-align: center;
+      margin-bottom: 20rpx;
+    }
 
     .options {
       padding: 0 40rpx;
@@ -1055,10 +1069,6 @@ export default {
         image {
           width: 60rpx;
         }
-      }
-
-      .grade {
-        font-size: 36rpx;
       }
     }
 
@@ -1301,7 +1311,7 @@ export default {
     position: fixed;
     z-index: 100;
     padding: 10px 20px;
-    background: #c00;
+    background: #cc0000;
     color: white;
     border: none;
     border-radius: 5px;
@@ -1327,7 +1337,7 @@ export default {
       transform: translateY(-50px);
     }
     to {
-      transform: translateY(100vh);
+      transform: translateY(105vh);
     }
   }
 }
